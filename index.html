@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LED Wall Cost Calculator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #calculator {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            padding: 2rem;
+            width: 100%;
+            max-width: 550px;
+            border: 1px solid #e0e0e0;
+        }
+        h1 {
+            text-align: center;
+            color: #1a1a1a;
+            margin-top: 0;
+            font-weight: 600;
+        }
+        .input-group {
+            margin-bottom: 1.25rem;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #555;
+        }
+        .input-group input[type="number"],
+        .input-group input[type="file"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box; /* Important for padding to work */
+            font-size: 1rem;
+            background-color: #fdfdfd;
+        }
+        .input-group input[type="file"] {
+            padding: 0.5rem;
+            background-color: #fafafa;
+        }
+        .input-row {
+            display: flex;
+            gap: 1rem;
+        }
+        .input-row .input-group {
+            flex: 1;
+        }
+        button {
+            width: 100%;
+            padding: 0.85rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            background-color: #007aff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        button:hover {
+            background-color: #005ec4;
+        }
+        button:disabled {
+            background-color: #a0a0a0;
+            cursor: not-allowed;
+        }
+
+        /* --- Mode Toggle --- */
+        .mode-toggle {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            background-color: #eef1f4;
+            border-radius: 8px;
+            padding: 4px;
+        }
+        .mode-toggle button {
+            flex: 1;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background-color: transparent;
+            color: #555;
+            transition: all 0.2s ease;
+        }
+        .mode-toggle button.active {
+            background-color: #ffffff;
+            color: #007aff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        }
+
+        /* --- Sections --- */
+        .calc-section {
+            border-top: 1px solid #eee;
+            padding-top: 1rem;
+        }
+        #advanced-mode-inputs {
+            display: none; /* Hidden by default */
+        }
+        .section-title {
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #007aff;
+            padding-bottom: 5px;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        /* --- Results --- */
+        #results {
+            margin-top: 2rem;
+            background-color: #f9f9f9;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            display: none; /* Hidden by default */
+        }
+        #results h2 {
+            margin-top: 0;
+            text-align: center;
+            color: #333;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .result-item .label {
+            font-weight: 500;
+            color: #444;
+            font-size: 0.95rem;
+        }
+        .result-item .value {
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #007aff;
+            text-align: right;
+        }
+        .result-item .value small {
+            font-weight: 400;
+            font-size: 0.9rem;
+            color: #777;
+            display: block;
+        }
+        #loading-message {
+            text-align: center;
+            display: none;
+            margin-top: 1rem;
+            color: #555;
+        }
+        
+        /* Helper text */
+        .helper-text {
+            font-size: 0.85rem;
+            color: #777;
+            margin-top: -0.75rem;
+            margin-bottom: 1.25rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="calculator">
+        <h1>LED Cost Calculator</h1>
+
+        <div class="mode-toggle">
+            <button id="simple-mode-btn" class="active">Simple Mode</button>
+            <button id="advanced-mode-btn">Advanced Mode</button>
+        </div>
+
+        <!-- COMMON INPUTS -->
+        <div class="calc-section">
+            <h3 class="section-title">1. Your Wall & Cost</h3>
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="wall-width">Total Wall Width (px)</label>
+                    <input type="number" id="wall-width" placeholder="e.g., 1920" value="832">
+                </div>
+                <div class="input-group">
+                    <label for="wall-height">Total Wall Height (px)</label>
+                    <input type="number" id="wall-height" placeholder="e.g., 1080" value="416">
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="cost-kwh">Electricity Cost ($ / kWh)</label>
+                <input type="number" id="cost-kwh" step="0.01" placeholder="e.g., 0.15" value="0.36">
+            </div>
+        </div>
+        
+        <!-- MODE-SPECIFIC INPUTS -->
+        <div class="calc-section">
+            <h3 class="section-title">2. Power Specs</h3>
+            
+            <!-- Simple Mode -->
+            <div id="simple-mode-inputs">
+                <div class="input-group">
+                    <label for="simple-max-power">Total Max Wall Power (Watts)</label>
+                    <input type="number" id="simple-max-power" placeholder="e.g., 38400">
+                </div>
+                <p class="helper-text">Enter the *total* maximum power for your *entire* wall (when displaying 100% white).</p>
+            </div>
+
+            <!-- Advanced Mode -->
+            <div id="advanced-mode-inputs">
+                <p class="helper-text">Calculates total power based on panel specs. Defaults are for a <strong>VD4.8OI1000SQ</strong>.</p>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="panel-width-px">Panel Width (px)</label>
+                        <input type="number" id="panel-width-px" value="208">
+                    </div>
+                    <div class="input-group">
+                        <label for="panel-height-px">Panel Height (px)</label>
+                        <input type="number" id="panel-height-px" value="208">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="panel-width-mm">Panel Width (mm)</label>
+                        <input type="number" id="panel-width-mm" value="1000">
+                    </div>
+                    <div class="input-group">
+                        <label for="panel-height-mm">Panel Height (mm)</label>
+                        <input type="number" id="panel-height-mm" value="1000">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="panel-max-power-w-sqm">Panel Max Power (W/sqm)</label>
+                    <input type="number" id="panel-max-power-w-sqm" value="800">
+                </div>
+            </div>
+        </div>
+
+        <!-- IMAGE UPLOAD -->
+        <div class="calc-section">
+            <h3 class="section-title">3. Image</h3>
+            <div class="input-group">
+                <label for="image-upload">Upload Image</label>
+                <input type="file" id="image-upload" accept="image/*">
+            </div>
+        </div>
+
+        <button id="calculate-btn">Calculate</button>
+
+        <div id="loading-message">Analyzing image... please wait.</div>
+
+        <div id="results">
+            <h2>Estimated Cost</h2>
+            <div class="result-item" id="apl-result-item">
+                <span class="label">Image APL:</span>
+                <span class="value" id="result-apl"></span>
+            </div>
+            <div class="result-item" id="total-panels-item" style="display: none;">
+                <span class="label">Total Panels Needed:</span>
+                <span class="value" id="result-total-panels"></span>
+            </div>
+            <div class="result-item" id="max-power-item" style="display: none;">
+                <span class="label">Calculated Max Power:</span>
+                <span class="value" id="result-max-power"></span>
+            </div>
+            <div class="result-item">
+                <span class="label">Actual Power Draw:</span>
+                <span class="value" id="result-power"></span>
+            </div>
+            <div class="result-item">
+                <span class="label">Cost per Hour:</span>
+                <span class="value" id="result-cost-hour"></span>
+            </div>
+            <div class="result-item">
+                <span class="label">Cost per Minute:</span>
+                <span class="value" id="result-cost-min"></span>
+            </div>
+            <div class="result-item">
+                <span class="label">Cost per Day (24h):</span>
+                <span class="value" id="result-cost-day"></span>
+            </div>
+            <div class="result-item">
+                <span class="label">Cost per Month (30d):</span>
+                <span class="value" id="result-cost-month"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const simpleModeBtn = document.getElementById('simple-mode-btn');
+        const advancedModeBtn = document.getElementById('advanced-mode-btn');
+        const simpleModeInputs = document.getElementById('simple-mode-inputs');
+        const advancedModeInputs = document.getElementById('advanced-mode-inputs');
+
+        const wallWidthInput = document.getElementById('wall-width');
+        const wallHeightInput = document.getElementById('wall-height');
+        const costKwhInput = document.getElementById('cost-kwh');
+        const imageUpload = document.getElementById('image-upload');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const resultsDiv = document.getElementById('results');
+        const loadingMsg = document.getElementById('loading-message');
+
+        // Simple Mode
+        const simpleMaxPowerInput = document.getElementById('simple-max-power');
+
+        // Advanced Mode
+        const panelWidthPxInput = document.getElementById('panel-width-px');
+        const panelHeightPxInput = document.getElementById('panel-height-px');
+        const panelWidthMmInput = document.getElementById('panel-width-mm');
+        const panelHeightMmInput = document.getElementById('panel-height-mm');
+        const panelMaxPowerSqmInput = document.getElementById('panel-max-power-w-sqm');
+
+        // Result display elements
+        const resultApl = document.getElementById('result-apl');
+        const resultTotalPanels = document.getElementById('result-total-panels');
+        const resultMaxPower = document.getElementById('result-max-power');
+        const resultPower = document.getElementById('result-power');
+        const resultCostHour = document.getElementById('result-cost-hour');
+        const resultCostMin = document.getElementById('result-cost-min');
+        const resultCostDay = document.getElementById('result-cost-day');
+        const resultCostMonth = document.getElementById('result-cost-month');
+        
+        const totalPanelsItem = document.getElementById('total-panels-item');
+        const maxPowerItem = document.getElementById('max-power-item');
+
+        let currentMode = 'simple'; // 'simple' or 'advanced'
+
+        // --- Event Listeners ---
+        simpleModeBtn.addEventListener('click', () => {
+            currentMode = 'simple';
+            simpleModeBtn.classList.add('active');
+            advancedModeBtn.classList.remove('active');
+            simpleModeInputs.style.display = 'block';
+            advancedModeInputs.style.display = 'none';
+        });
+
+        advancedModeBtn.addEventListener('click', () => {
+            currentMode = 'advanced';
+            advancedModeBtn.classList.add('active');
+            simpleModeBtn.classList.remove('active');
+            simpleModeInputs.style.display = 'none';
+            advancedModeInputs.style.display = 'block';
+        });
+
+        calculateBtn.addEventListener('click', handleCalculation);
+
+        // --- Functions ---
+        function handleCalculation() {
+            // 1. Get common values
+            const wallWidth = parseInt(wallWidthInput.value);
+            const wallHeight = parseInt(wallHeightInput.value);
+            const costPerKwh = parseFloat(costKwhInput.value);
+            const imageFile = imageUpload.files[0];
+
+            // 2. Simple Validation
+            if (!wallWidth || !wallHeight || !costPerKwh || !imageFile) {
+                alert('Please fill in Wall Dimensions, Cost, and upload an image.');
+                return;
+            }
+
+            let totalMaxPowerW = 0;
+            let totalPanels = 0;
+
+            if (currentMode === 'simple') {
+                totalMaxPowerW = parseFloat(simpleMaxPowerInput.value);
+                if (!totalMaxPowerW) {
+                    alert('Please enter the Total Max Wall Power for Simple Mode.');
+                    return;
+                }
+                totalPanelsItem.style.display = 'none';
+                maxPowerItem.style.display = 'none';
+            } else {
+                // Advanced Mode Calculation
+                const panelWidthPx = parseInt(panelWidthPxInput.value);
+                const panelHeightPx = parseInt(panelHeightPxInput.value);
+                const panelWidthMm = parseInt(panelWidthMmInput.value);
+                const panelHeightMm = parseInt(panelHeightMmInput.value);
+                const panelMaxPowerSqm = parseFloat(panelMaxPowerSqmInput.value);
+
+                if (!panelWidthPx || !panelHeightPx || !panelWidthMm || !panelHeightMm || !panelMaxPowerSqm) {
+                    alert('Please fill in all Advanced Panel Specs.');
+                    return;
+                }
+
+                // Calculate total panels needed. Use Math.ceil to ensure we have enough.
+                const panelsWide = Math.ceil(wallWidth / panelWidthPx);
+                const panelsHigh = Math.ceil(wallHeight / panelHeightPx);
+                totalPanels = panelsWide * panelsHigh;
+
+                // Calculate total square meters
+                const panelAreaSqm = (panelWidthMm / 1000) * (panelHeightMm / 1000);
+                const totalSqm = totalPanels * panelAreaSqm;
+                
+                // Calculate total max power
+                totalMaxPowerW = totalSqm * panelMaxPowerSqm;
+
+                // Show advanced results
+                resultTotalPanels.textContent = `${totalPanels} (${panelsWide}W x ${panelsHigh}H)`;
+                resultMaxPower.textContent = `${totalMaxPowerW.toFixed(0)} W`;
+                totalPanelsItem.style.display = 'flex';
+                maxPowerItem.style.display = 'flex';
+            }
+
+            // 3. Show loading state
+            calculateBtn.disabled = true;
+            loadingMsg.style.display = 'block';
+            resultsDiv.style.display = 'none';
+
+            // 4. Start Image Processing
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    // Image is loaded, now analyze it
+                    const apl = calculateAPL(img, wallWidth, wallHeight);
+                    
+                    // 5. Calculate Power and Cost based on APL
+                    const actualPowerW = totalMaxPowerW * apl;
+                    const actualPowerKw = actualPowerW / 1000;
+                    const costPerHour = actualPowerKw * costPerKwh;
+                    const costPerMinute = costPerHour / 60;
+                    const costPerDay = costPerHour * 24;
+                    const costPerMonth = costPerDay * 30;
+
+                    // 6. Display Results
+                    displayResults({
+                        apl: apl,
+                        powerKw: actualPowerKw,
+                        costHour: costPerHour,
+                        costMin: costPerMinute,
+                        costDay: costPerDay,
+                        costMonth: costPerMonth
+                    });
+                };
+                img.src = event.target.result;
+            };
+            
+            reader.readAsDataURL(imageFile);
+        }
+
+        function calculateAPL(img, targetWidth, targetHeight) {
+            // Create an off-screen canvas
+            const canvas = document.createElement('canvas');
+            // Use smaller canvas for performance, aspect ratio is what matters
+            const aspectRatio = targetWidth / targetHeight;
+            const analysisWidth = Math.min(targetWidth, 500);
+            const analysisHeight = analysisWidth / aspectRatio;
+
+            canvas.width = analysisWidth;
+            canvas.height = analysisHeight;
+            
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+            // Draw the image onto the canvas, resizing it
+            ctx.drawImage(img, 0, 0, analysisWidth, analysisHeight);
+
+            const imageData = ctx.getImageData(0, 0, analysisWidth, analysisHeight);
+            const data = imageData.data;
+            const totalPixels = analysisWidth * analysisHeight;
+            let totalBrightness = 0;
+
+            for (let i = 0; i < data.length; i += 4) {
+                totalBrightness += (data[i] + data[i+1] + data[i+2]);
+            }
+
+            const maxBrightness = (255 + 255 + 255) * totalPixels;
+            const apl = totalBrightness / maxBrightness;
+
+            return apl;
+        }
+
+        function displayResults(data) {
+            // Format and show results
+            resultApl.textContent = `${(data.apl * 100).toFixed(2)} %`;
+            resultPower.textContent = `${data.powerKw.toFixed(3)} kW/h`;
+            resultCostHour.textContent = `$${data.costHour.toFixed(2)}`;
+            resultCostMin.textContent = `$${data.costMin.toFixed(4)}`;
+            resultCostDay.textContent = `$${data.costDay.toFixed(2)}`;
+            resultCostMonth.textContent = `$${data.costMonth.toFixed(2)}`;
+
+            // Hide loading and show results
+            resultsDiv.style.display = 'block';
+            loadingMsg.style.display = 'none';
+            calculateBtn.disabled = false;
+        }
+    </script>
+
+</body>
+</html>
